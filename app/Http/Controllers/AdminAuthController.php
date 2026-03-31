@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+
+class AdminAuthController extends Controller
+{
+    public function create(): View|RedirectResponse
+    {
+        if (Auth::check() && Auth::user()?->is_admin) {
+            return redirect()->route('admin.orders.index');
+        }
+
+        return view('admin.auth.login');
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        if (Auth::attempt([...$credentials, 'is_admin' => true], $request->boolean('remember'))) {
+            $request->session()->regenerate();
+
+            return redirect()->intended(route('admin.orders.index'));
+        }
+
+        return back()->withErrors([
+            'email' => 'Admin giris bilgileri gecersiz.',
+        ])->onlyInput('email');
+    }
+
+    public function destroy(Request $request): RedirectResponse
+    {
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('acp.login');
+    }
+}
