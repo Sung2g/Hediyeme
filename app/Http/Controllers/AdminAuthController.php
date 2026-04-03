@@ -12,7 +12,7 @@ class AdminAuthController extends Controller
     public function create(): View|RedirectResponse
     {
         if (Auth::check() && Auth::user()?->is_admin) {
-            return redirect()->route('admin.orders.index');
+            return redirect()->route('admin.dashboard');
         }
 
         return view('admin.auth.login');
@@ -28,7 +28,7 @@ class AdminAuthController extends Controller
         if (Auth::attempt([...$credentials, 'is_admin' => true], $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            return redirect()->intended(route('admin.orders.index'));
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         return back()->withErrors([

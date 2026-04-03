@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class OrderController extends Controller
 {
+    public const STATUSES = ['new', 'preparing', 'shipped', 'completed', 'cancelled'];
+
     public function index(): View
     {
         return view('admin.orders.index', [
-            'orders' => Order::query()->latest()->paginate(20),
+            'orders' => Order::query()->with('user')->latest()->paginate(20),
         ]);
     }
 
@@ -20,18 +23,17 @@ class OrderController extends Controller
     {
         return view('admin.orders.show', [
             'order' => $order->load('items.product', 'user'),
+            'statuses' => self::STATUSES,
         ]);
     }
 
-    public function updateStatus(Order $order): RedirectResponse
+    public function updateStatus(Request $request, Order $order): RedirectResponse
     {
-        $next = match ($order->status) {
-            'new' => 'preparing',
-            'preparing' => 'shipped',
-            default => 'completed',
-        };
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:'.implode(',', self::STATUSES)],
+        ]);
 
-        $order->update(['status' => $next]);
+        $order->update(['status' => $validated['status']]);
 
         return back()->with('success', 'Siparis durumu guncellendi.');
     }

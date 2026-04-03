@@ -19,15 +19,15 @@ Ilk kurulumdan sonra migration calistirmak icin:
 
 ```bash
 docker compose exec app php artisan migrate
+docker compose exec app php artisan storage:link
 ```
+
+Yerel PHP ile calisiyorsaniz `php artisan storage:link` komutunu bir kez calistirin; admin panelinden yuklenen urun gorselleri icin gereklidir.
 
 Servisler:
 
 - Laravel: http://localhost:8000
 - Vite (HMR): http://localhost:5173
-- phpMyAdmin: http://localhost:8080
-  - Kullanici: `root`
-  - Sifre: `root`
 
 Durdurmak icin:
 

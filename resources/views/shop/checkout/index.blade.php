@@ -1,60 +1,64 @@
-@extends('shop.layout')
+@extends('layouts.shop')
 
-@section('title', 'Checkout')
+@section('title', 'Odeme — hediyeme.com')
 
 @section('content')
-    <h1 class="mb-6 text-2xl font-bold">Siparisi Tamamla</h1>
+    <h1 class="text-3xl font-extrabold tracking-tight text-gray-900">Siparisi tamamla</h1>
+    <p class="mt-2 text-sm text-gray-500">Iletisim ve odeme yonteminizi secin.</p>
 
-    <div class="grid gap-6 md:grid-cols-2">
-        <form action="{{ route('shop.checkout.store') }}" method="POST" class="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+    <div class="mt-10 grid gap-8 lg:grid-cols-2 lg:gap-12">
+        <form action="{{ route('shop.checkout.store') }}" method="POST" class="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             @csrf
 
             @guest
                 <div>
-                    <label class="mb-1 block text-sm font-medium">Ad Soyad</label>
-                    <input type="text" name="name" value="{{ old('name') }}" class="w-full rounded-lg border-gray-300">
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Ad Soyad</label>
+                    <input type="text" name="name" value="{{ old('name') }}" class="w-full rounded-xl border-gray-200 shadow-sm">
                     @error('name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="mb-1 block text-sm font-medium">E-Posta</label>
-                    <input type="email" name="email" value="{{ old('email') }}" class="w-full rounded-lg border-gray-300">
+                    <label class="mb-1 block text-sm font-medium text-gray-700">E-posta</label>
+                    <input type="email" name="email" value="{{ old('email') }}" class="w-full rounded-xl border-gray-200 shadow-sm">
                     @error('email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
             @endguest
 
             <div>
-                <label class="mb-1 block text-sm font-medium">Telefon</label>
-                <input type="text" name="phone" value="{{ old('phone') }}" class="w-full rounded-lg border-gray-300">
+                <label class="mb-1 block text-sm font-medium text-gray-700">Telefon</label>
+                <input type="text" name="phone" value="{{ old('phone') }}" class="w-full rounded-xl border-gray-200 shadow-sm" placeholder="+90 ...">
                 @error('phone')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
             <div>
-                <label class="mb-1 block text-sm font-medium">Odeme Yontemi</label>
-                <select name="payment_method" class="w-full rounded-lg border-gray-300">
+                <label class="mb-1 block text-sm font-medium text-gray-700">Odeme yontemi</label>
+                <select name="payment_method" class="w-full rounded-xl border-gray-200 shadow-sm">
                     @foreach($paymentMethods as $key => $label)
-                        <option value="{{ $key }}" @selected(old('payment_method') === $key)>{{ $label }}</option>
+                        <option value="{{ $key }}" @selected(old('payment_method', $selectedPaymentMethod ?? 'simulated_online') === $key)>{{ $label }}</option>
                     @endforeach
                 </select>
                 @error('payment_method')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 
-            <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white">
-                Siparisi Onayla
+            <button type="submit" class="w-full rounded-xl bg-rose-600 py-3.5 text-sm font-bold text-white shadow-md hover:bg-rose-700">
+                Siparisi onayla
             </button>
         </form>
 
-        <div class="rounded-xl border border-gray-200 bg-white p-5">
-            <h2 class="font-semibold">Sepet Ozeti</h2>
-            <div class="mt-4 space-y-2">
+        <div class="h-fit rounded-2xl border border-gray-100 bg-gray-50/80 p-6">
+            <h2 class="font-bold text-gray-900">Sepet ozeti</h2>
+            <ul class="mt-4 space-y-3">
                 @foreach($items as $item)
-                    <div class="flex justify-between text-sm">
-                        <span>{{ $item['name'] }} x{{ $item['quantity'] }}</span>
-                        <span>{{ number_format($item['line_total'], 2) }} TL</span>
-                    </div>
+                    <li class="flex justify-between gap-4 text-sm">
+                        <span class="text-gray-600">{{ $item['name'] }} <span class="text-gray-400">×{{ $item['quantity'] }}</span></span>
+                        <span class="shrink-0 font-semibold text-gray-900">{{ number_format($item['line_total'], 2) }} TL</span>
+                    </li>
                 @endforeach
-            </div>
-            <div class="mt-4 border-t pt-4 text-right">
-                <p class="text-lg font-bold">Toplam: {{ number_format($subtotal, 2) }} TL</p>
+            </ul>
+            <div class="mt-6 border-t border-gray-200 pt-4">
+                <div class="flex items-center justify-between text-lg font-extrabold text-gray-900">
+                    <span>Toplam</span>
+                    <span class="text-rose-600">{{ number_format($subtotal, 2) }} TL</span>
+                </div>
             </div>
         </div>
     </div>

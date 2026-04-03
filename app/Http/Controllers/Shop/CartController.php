@@ -16,7 +16,6 @@ class CartController extends Controller
         return view('shop.cart.index', [
             'items' => $cart->items(),
             'subtotal' => $cart->subtotal(),
-            'cartCount' => $cart->count(),
         ]);
     }
 
