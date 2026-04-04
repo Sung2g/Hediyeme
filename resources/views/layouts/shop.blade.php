@@ -16,6 +16,16 @@
         @if (session('error'))
             <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">{{ session('error') }}</div>
         @endif
+        @if ($errors->any())
+            <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+                <p class="font-semibold">Lutfen formu kontrol edin.</p>
+                <ul class="mt-2 list-inside list-disc">
+                    @foreach ($errors->all() as $err)
+                        <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         @yield('content')
     </main>

@@ -102,6 +102,9 @@
                                         <i data-lucide="gift" class="h-12 w-12 text-gray-300"></i>
                                     </div>
                                 @endif
+                                @if($product->is_on_sale)
+                                    <span class="absolute top-3 right-3 z-10 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white shadow">Indirimde</span>
+                                @endif
                                 @if($product->stock <= 5 && $product->stock > 0)
                                     <span class="absolute top-3 left-3 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">Son {{ $product->stock }}</span>
                                 @endif
@@ -134,7 +137,12 @@
 
                                 <div class="mt-4 flex items-end justify-between gap-3 border-t border-gray-50 pt-4">
                                     <div>
-                                        <p class="text-xl font-extrabold text-rose-600">{{ number_format($product->price, 2) }} <span class="text-sm font-semibold text-gray-500">TL</span></p>
+                                        <p class="text-xl font-extrabold text-rose-600">
+                                            @if($product->hasStrikethroughPrice())
+                                                <span class="mr-1 text-sm font-semibold text-gray-400 line-through">{{ number_format($product->compare_at_price, 2) }}</span>
+                                            @endif
+                                            {{ number_format($product->price, 2) }} <span class="text-sm font-semibold text-gray-500">TL</span>
+                                        </p>
                                         <p class="text-xs text-gray-400">Stok: {{ $product->stock }}</p>
                                     </div>
                                 </div>
@@ -150,13 +158,15 @@
                                         </button>
                                     </form>
                                 </div>
-                                <button
-                                    type="button"
-                                    class="mt-2 w-full rounded-xl border-2 border-rose-200 bg-rose-50/50 py-2.5 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-50"
-                                    x-on:click="$dispatch('open-shop-cod', { slug: '{{ e($product->slug) }}', title: {{ json_encode($product->name) }} })"
-                                >
-                                    Kapida odemeyle al
-                                </button>
+                                @if($product->cod_enabled)
+                                    <button
+                                        type="button"
+                                        class="shop-cod-cta mt-2 w-full rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 py-2.5 text-sm font-bold text-white shadow-md transition"
+                                        x-on:click="$dispatch('open-shop-cod', { slug: '{{ e($product->slug) }}', title: {{ json_encode($product->name) }} })"
+                                    >
+                                        Ücretsiz kapıda ödemeyle al
+                                    </button>
+                                @endif
                             </div>
                         </article>
                     @endforeach

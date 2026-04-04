@@ -14,15 +14,22 @@ class Product extends Model
         'name',
         'slug',
         'description',
+        'features',
         'price',
         'stock',
         'type',
         'is_active',
+        'is_on_sale',
+        'compare_at_price',
+        'cod_enabled',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'compare_at_price' => 'decimal:2',
         'is_active' => 'boolean',
+        'is_on_sale' => 'boolean',
+        'cod_enabled' => 'boolean',
     ];
 
     public function category(): BelongsTo
@@ -38,6 +45,20 @@ class Product extends Model
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    public function specAttributes(): HasMany
+    {
+        return $this->hasMany(ProductAttribute::class)->orderBy('sort_order');
+    }
+
+    public function hasStrikethroughPrice(): bool
+    {
+        if (! $this->is_on_sale || $this->compare_at_price === null) {
+            return false;
+        }
+
+        return (float) $this->compare_at_price > (float) $this->price;
     }
 
     public function reviews(): HasMany

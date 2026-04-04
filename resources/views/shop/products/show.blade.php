@@ -52,6 +52,9 @@
         {{-- Sol: galeri --}}
         <div class="space-y-4">
             <div class="relative flex aspect-square items-center justify-center overflow-hidden rounded-3xl border border-amber-100 bg-amber-50/80 group">
+                @if($product->is_on_sale)
+                    <span class="absolute top-4 left-4 z-10 rounded-full bg-rose-600 px-3 py-1 text-xs font-bold text-white shadow-md">Indirimde</span>
+                @endif
                 @if($mainSrc)
                     <img
                         src="{{ $mainSrc }}"
@@ -65,9 +68,6 @@
                         <p class="mt-4 text-sm text-gray-500">Gorsel yakinda</p>
                     </div>
                 @endif
-                <button type="button" class="absolute top-4 right-4 z-10 cursor-pointer rounded-full bg-white p-2 text-gray-400 shadow-sm transition hover:text-rose-500" aria-label="Favorilere ekle (yakinda)">
-                    <i data-lucide="heart" class="h-5 w-5"></i>
-                </button>
             </div>
 
             @if($product->images->count() > 1)
@@ -103,7 +103,13 @@
 
             <section class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:hidden">
                 <h2 class="text-lg font-bold text-gray-900">Urun aciklamasi</h2>
-                <div class="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600">{{ $product->description }}</div>
+                <div class="mt-3 text-sm leading-relaxed text-gray-600">
+                    @if(filled($product->description))
+                        {{ \Illuminate\Support\Str::limit(strip_tags($product->description), 200) }}
+                    @else
+                        <span class="text-gray-400">Aciklama yakinda.</span>
+                    @endif
+                </div>
             </section>
         </div>
 
@@ -137,7 +143,16 @@
 
             <div class="mb-6">
                 <div class="flex flex-wrap items-end gap-3">
+                    @if($product->hasStrikethroughPrice())
+                        <span class="text-xl font-semibold text-gray-400 line-through">{{ number_format($product->compare_at_price, 2) }} TL</span>
+                    @endif
                     <span class="text-4xl font-extrabold text-rose-600">{{ number_format($product->price, 2) }} TL</span>
+                    @if($product->is_on_sale && $product->hasStrikethroughPrice())
+                        @php
+                            $pct = round((1 - (float) $product->price / (float) $product->compare_at_price) * 100);
+                        @endphp
+                        <span class="rounded-lg bg-amber-100 px-2 py-1 text-sm font-bold text-amber-800">%{{ max(0, min(99, $pct)) }} indirim</span>
+                    @endif
                 </div>
                 <p class="mt-2 flex items-center gap-1 text-sm font-medium text-emerald-600">
                     <i data-lucide="sparkles" class="h-4 w-4"></i>
@@ -147,7 +162,11 @@
 
             <div class="mb-6 space-y-4 border-t border-b border-gray-100 py-6">
                 <p class="leading-relaxed text-gray-600">
-                    {{ \Illuminate\Support\Str::limit(strip_tags($product->description), 320) }}
+                    @if(filled($product->description))
+                        {{ \Illuminate\Support\Str::limit(strip_tags($product->description), 200) }}
+                    @else
+                        <span class="text-gray-400">Bu ürün için kısa açıklama henüz eklenmedi.</span>
+                    @endif
                 </p>
                 <ul class="mt-4 grid grid-cols-1 gap-4 text-sm font-medium text-gray-700 sm:grid-cols-2">
                     <li class="flex items-center gap-3">
@@ -169,30 +188,38 @@
                 </ul>
             </div>
 
-            <form id="product-add-cart-form" action="{{ route('shop.cart.store', $product->id) }}" method="POST" class="mb-8 flex flex-col gap-4 sm:flex-row" x-data="{ qty: {{ (int) old('quantity', 1) }} }">
+            <form id="product-add-cart-form" action="{{ route('shop.cart.store', $product->id) }}" method="POST" class="mb-8 flex flex-row items-stretch gap-2 sm:gap-3" x-data="{ qty: {{ (int) old('quantity', 1) }} }">
                 @csrf
-                <div class="flex h-14 w-full items-center rounded-xl border-2 border-gray-200 bg-white px-2 sm:w-40">
-                    <button type="button" class="flex h-full items-center p-2 text-gray-500 transition hover:text-rose-600" x-on:click.prevent="qty = Math.max(1, qty - 1)" aria-label="Azalt">
-                        <i data-lucide="minus" class="h-5 w-5"></i>
+                <div class="flex h-12 w-[5.75rem] shrink-0 items-center rounded-lg border border-gray-200 bg-white px-0.5 shadow-sm sm:h-14 sm:w-36 sm:rounded-xl sm:border-2 sm:px-1 sm:shadow-none" aria-label="Adet">
+                    <button type="button" class="flex h-full min-w-[1.75rem] items-center justify-center rounded-md p-0.5 text-gray-500 transition hover:bg-gray-50 hover:text-rose-600 sm:min-w-[2rem] sm:p-1.5" x-on:click.prevent="qty = Math.max(1, qty - 1)" aria-label="Azalt">
+                        <i data-lucide="minus" class="h-3.5 w-3.5 sm:h-4 sm:w-4"></i>
                     </button>
-                    <input type="number" id="product-qty" name="quantity" x-model.number="qty" min="1" max="20" class="w-full border-0 bg-transparent text-center text-lg font-bold text-gray-800 focus:ring-0">
-                    <button type="button" class="flex h-full items-center p-2 text-gray-500 transition hover:text-rose-600" x-on:click.prevent="qty = Math.min(20, qty + 1)" aria-label="Arttir">
-                        <i data-lucide="plus" class="h-5 w-5"></i>
+                    <input type="number" id="product-qty" name="quantity" x-model.number="qty" min="1" max="20" class="min-w-0 flex-1 border-0 bg-transparent px-0.5 text-center text-sm font-bold tabular-nums text-gray-900 focus:ring-0 sm:text-base">
+                    <button type="button" class="flex h-full min-w-[1.75rem] items-center justify-center rounded-md p-0.5 text-gray-500 transition hover:bg-gray-50 hover:text-rose-600 sm:min-w-[2rem] sm:p-1.5" x-on:click.prevent="qty = Math.min(20, qty + 1)" aria-label="Arttir">
+                        <i data-lucide="plus" class="h-3.5 w-3.5 sm:h-4 sm:w-4"></i>
                     </button>
                 </div>
-                <button type="submit" class="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-rose-600 text-lg font-bold text-white shadow-lg shadow-rose-200 transition hover:-translate-y-0.5 hover:bg-rose-700">
-                    <i data-lucide="shopping-cart" class="h-5 w-5"></i>
-                    Sepete ekle
+                <button type="submit" class="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-rose-600 px-3 text-base font-extrabold tracking-tight text-white shadow-md shadow-rose-200/80 transition active:scale-[0.98] sm:min-h-14 sm:rounded-xl sm:px-5 sm:text-lg sm:shadow-lg sm:shadow-rose-200 hover:bg-rose-700 sm:hover:-translate-y-0.5">
+                    <i data-lucide="shopping-cart" class="h-5 w-5 shrink-0 sm:h-5 sm:w-5"></i>
+                    <span>Sepete ekle</span>
                 </button>
             </form>
 
-            <button
-                type="button"
-                class="mb-8 w-full rounded-xl border-2 border-rose-200 bg-white py-3.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50"
-                x-on:click="$dispatch('open-shop-cod', { slug: '{{ e($product->slug) }}', title: {{ json_encode($product->name) }}, quantity: Number(document.getElementById('product-qty')?.value) || 1 })"
-            >
-                Kapida odemeyle satin al
-            </button>
+            @if($product->cod_enabled)
+                <div class="mb-8 space-y-3">
+                    <button
+                        type="button"
+                        class="shop-cod-cta relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 py-4 text-base font-extrabold tracking-tight text-white shadow-lg transition duration-200"
+                        x-on:click="$dispatch('open-shop-cod', { slug: '{{ e($product->slug) }}', title: {{ json_encode($product->name) }}, quantity: Number(document.getElementById('product-qty')?.value) || 1 })"
+                    >
+                        <span class="relative z-10 flex items-center justify-center gap-2 text-center leading-tight">
+                            <i data-lucide="truck" class="h-6 w-6 shrink-0"></i>
+                            Ücretsiz kapıda ödemeyle satın al
+                        </span>
+                    </button>
+                
+                </div>
+            @endif
 
             <div class="flex items-start gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-5">
                 <i data-lucide="shield-check" class="mt-1 h-7 w-7 shrink-0 text-indigo-600"></i>
@@ -226,29 +253,48 @@
             <div>
                 <h3 class="mb-4 flex items-center gap-2 text-xl font-bold text-gray-900">
                     <i data-lucide="sparkles" class="h-6 w-6 text-amber-500"></i>
-                    Urun hakkinda
+                    Urun ozellikleri
                 </h3>
-                <div class="space-y-4 whitespace-pre-line text-base leading-relaxed text-gray-600">{{ $product->description }}</div>
+                <div class="space-y-4 whitespace-pre-line text-base leading-relaxed text-gray-600">
+                    @if(filled($product->features))
+                        {{ $product->features }}
+                    @elseif(filled($product->description))
+                        {{ $product->description }}
+                    @else
+                        <span class="text-gray-400">Bu ürün için detaylı özellik metni henüz eklenmedi.</span>
+                    @endif
+                </div>
             </div>
             <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                 <h3 class="mb-4 text-lg font-bold text-gray-900">Teknik detaylar</h3>
                 <ul class="divide-y divide-gray-50 space-y-0">
-                    <li class="flex justify-between pt-2 text-sm">
+                    <li class="flex justify-between gap-4 pt-2 text-sm">
                         <span class="text-gray-500">Kategori</span>
-                        <span class="font-bold text-gray-900">{{ $product->category->name ?? '—' }}</span>
+                        <span class="max-w-[60%] text-right font-bold text-gray-900">{{ $product->category->name ?? '—' }}</span>
                     </li>
-                    <li class="flex justify-between pt-4 text-sm">
+                    <li class="flex justify-between gap-4 pt-4 text-sm">
                         <span class="text-gray-500">Urun tipi</span>
-                        <span class="font-bold text-gray-900">{{ $typeLabel }}</span>
+                        <span class="max-w-[60%] text-right font-bold text-gray-900">{{ $typeLabel }}</span>
                     </li>
-                    <li class="flex justify-between pt-4 text-sm">
+                    <li class="flex justify-between gap-4 pt-4 text-sm">
                         <span class="text-gray-500">Stok</span>
-                        <span class="font-bold text-gray-900">{{ $product->stock }} adet</span>
+                        <span class="max-w-[60%] text-right font-bold text-gray-900">{{ $product->stock }} adet</span>
                     </li>
-                    <li class="flex justify-between py-4 text-sm">
+                    <li class="flex justify-between gap-4 py-4 text-sm">
                         <span class="text-gray-500">Fiyat</span>
-                        <span class="font-bold text-gray-900">{{ number_format($product->price, 2) }} TL</span>
+                        <span class="max-w-[60%] text-right font-bold text-gray-900">
+                            @if($product->hasStrikethroughPrice())
+                                <span class="mr-2 text-gray-400 line-through">{{ number_format($product->compare_at_price, 2) }} TL</span>
+                            @endif
+                            {{ number_format($product->price, 2) }} TL
+                        </span>
                     </li>
+                    @foreach($product->specAttributes as $attr)
+                        <li class="flex justify-between gap-4 py-4 text-sm">
+                            <span class="text-gray-500">{{ $attr->name }}</span>
+                            <span class="max-w-[60%] whitespace-pre-line text-right font-bold text-gray-900">{{ $attr->value }}</span>
+                        </li>
+                    @endforeach
                 </ul>
             </div>
         </div>

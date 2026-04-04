@@ -42,8 +42,9 @@
                 </button>
             </form>
 
-            <p class="mt-6 text-center text-xs text-slate-500">
-                Varsayilan: admin@hediyeme.com / password
+            <p class="mt-6 text-center text-sm text-slate-400">
+                Hesabiniz yok mu?
+                <a href="{{ route('acp.register') }}" class="font-medium text-rose-400 hover:text-rose-300">Admin kayit</a>
             </p>
         </div>
     </div>

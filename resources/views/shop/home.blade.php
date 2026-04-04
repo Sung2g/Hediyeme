@@ -123,7 +123,10 @@
                     @endphp
                     <div class="group rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-xl">
                         <a href="{{ route('shop.products.show', $product->slug) }}" class="block">
-                            <div class="{{ $color }} mb-4 flex h-48 w-full items-center justify-center overflow-hidden rounded-xl transition-transform group-hover:scale-[1.02]">
+                            <div class="{{ $color }} relative mb-4 flex h-48 w-full items-center justify-center overflow-hidden rounded-xl transition-transform group-hover:scale-[1.02]">
+                                @if($product->is_on_sale)
+                                    <span class="absolute top-2 left-2 z-10 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white shadow">Indirimde</span>
+                                @endif
                                 @if($cover)
                                     <img src="{{ $cover->url() }}" alt="{{ $product->name }}" class="h-full w-full object-cover">
                                 @else
@@ -148,8 +151,13 @@
                         <a href="{{ route('shop.products.show', $product->slug) }}" class="block">
                             <h3 class="mb-2 min-h-10 font-bold text-gray-800 transition group-hover:text-rose-600">{{ $product->name }}</h3>
                         </a>
-                        <div class="mt-4 flex items-center justify-between">
-                            <span class="text-lg font-extrabold text-rose-600">{{ number_format($product->price, 2) }} TL</span>
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-lg font-extrabold text-rose-600">
+                                @if($product->hasStrikethroughPrice())
+                                    <span class="mr-2 text-sm font-semibold text-gray-400 line-through">{{ number_format($product->compare_at_price, 2) }}</span>
+                                @endif
+                                {{ number_format($product->price, 2) }} TL
+                            </span>
                             <form action="{{ route('shop.cart.store', $product->id) }}" method="POST">
                                 @csrf
                                 <button type="submit" class="rounded-xl bg-gray-900 p-2 text-white transition-colors hover:bg-rose-600" aria-label="Sepete ekle">

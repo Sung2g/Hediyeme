@@ -24,6 +24,7 @@ class CheckoutController extends Controller
             'items' => $cart->items(),
             'subtotal' => $cart->subtotal(),
             'selectedPaymentMethod' => old('payment_method', $fromSession ?? 'simulated_online'),
+            'checkoutPrefill' => $request->session()->get('checkout_guest_prefill', []),
             'paymentMethods' => [
                 'simulated_online' => 'Simule Online Odeme',
                 'cash_on_delivery' => 'Kapida Nakit',
@@ -43,7 +44,7 @@ class CheckoutController extends Controller
             'payment_method' => ['required', 'in:simulated_online,cash_on_delivery,card_on_delivery'],
         ];
 
-        if (! $request->user()) {
+        if (! $request->user('web')) {
             $rules['name'] = ['required', 'string', 'max:255'];
             $rules['email'] = ['required', 'email', 'max:255'];
         }
@@ -58,10 +59,11 @@ class CheckoutController extends Controller
                 'phone' => $validated['phone'],
             ],
             $validated['payment_method'],
-            $request->user()
+            $request->user('web')
         );
 
         $cart->clear();
+        $request->session()->forget('checkout_guest_prefill');
 
         return redirect()->route('shop.checkout.success', $order)->with('success', 'Siparisiniz olusturuldu.');
     }

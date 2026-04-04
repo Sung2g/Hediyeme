@@ -19,9 +19,21 @@
                         </li>
                     @endforeach
                 </ul>
-                <div class="mt-4 flex justify-between border-t border-slate-200 pt-4">
-                    <span class="text-sm font-medium text-slate-500">Toplam</span>
-                    <span class="text-xl font-extrabold tabular-nums text-rose-600">{{ number_format($order->total, 2) }} TL</span>
+                <div class="mt-4 space-y-1 border-t border-slate-200 pt-4 text-sm">
+                    <div class="flex justify-between">
+                        <span class="font-medium text-slate-500">Ara toplam</span>
+                        <span class="tabular-nums font-semibold text-slate-900">{{ number_format($order->subtotal, 2) }} TL</span>
+                    </div>
+                    @if((float) $order->shipping_fee > 0)
+                        <div class="flex justify-between">
+                            <span class="font-medium text-slate-500">Kargo</span>
+                            <span class="tabular-nums font-semibold text-slate-900">{{ number_format($order->shipping_fee, 2) }} TL</span>
+                        </div>
+                    @endif
+                    <div class="flex justify-between pt-2 text-base">
+                        <span class="font-bold text-slate-500">Toplam</span>
+                        <span class="text-xl font-extrabold tabular-nums text-rose-600">{{ number_format($order->total, 2) }} TL</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -38,6 +50,27 @@
                         <div>
                             <dt class="text-slate-500">Telefon</dt>
                             <dd class="font-medium text-slate-900">{{ $order->guest_phone }}</dd>
+                        </div>
+                    @endif
+                    @if($order->shipping_city || $order->shipping_district || $order->shipping_address)
+                        <div>
+                            <dt class="text-slate-500">Teslimat</dt>
+                            <dd class="font-medium text-slate-900">
+                                @if($order->shipping_district && $order->shipping_city)
+                                    {{ $order->shipping_district }} / {{ $order->shipping_city }}
+                                @elseif($order->shipping_city)
+                                    {{ $order->shipping_city }}
+                                @endif
+                                @if($order->shipping_address)
+                                    <span class="mt-1 block whitespace-pre-wrap text-slate-600">{{ $order->shipping_address }}</span>
+                                @endif
+                            </dd>
+                        </div>
+                    @endif
+                    @if($order->seller_note)
+                        <div>
+                            <dt class="text-slate-500">Satıcıya not</dt>
+                            <dd class="whitespace-pre-wrap font-medium text-slate-900">{{ $order->seller_note }}</dd>
                         </div>
                     @endif
                     <div>

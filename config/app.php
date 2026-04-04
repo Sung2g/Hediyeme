@@ -56,6 +56,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Asset URL (CDN)
+    |--------------------------------------------------------------------------
+    |
+    | Bunny CDN / diger CDN: Pull Zone hostname (ornek: https://hediyeme.b-cdn.net).
+    | local/testing ortaminda ASSET_URL yok sayilir; aksi halde Vite/CSS localhost
+    | dosyalarini CDN'de arar ve panel bozulur. Canlida APP_ENV=production + ASSET_URL.
+    |
+    */
+
+    'asset_url' => in_array(env('APP_ENV'), ['local', 'testing'], true)
+        ? null
+        : env('ASSET_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

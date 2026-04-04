@@ -10,16 +10,15 @@ services:
     volumes:
       - ./:/var/www/html
       - vendor_data:/var/www/html/vendor
+    env_file:
+      - .env
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
       APP_URL: http://localhost:8000
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: hediyeme
-      DB_USERNAME: hediyeme_user
-      DB_PASSWORD: secret
+      # DB_* bilgileri .env dosyasından okunur (uzak veya yerel MySQL).
+      # Eski davranış: aşağıdaki sabitler .env'yi ezip Docker içi "mysql" servisine bağlıyordu.
+    # Uzak DB kullaniyorsan asagidaki satiri ve alttaki mysql servisini kaldirabilirsin.
     depends_on:
       - mysql
     command: >

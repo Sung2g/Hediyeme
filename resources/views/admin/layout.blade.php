@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Panel') — hediyeme ACP</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -13,7 +14,8 @@
         <div class="flex min-w-0 flex-1 flex-col lg:ml-0">
             @include('admin.partials.topbar')
 
-            <main class="flex-1 p-4 sm:p-6 lg:p-8">
+            <main class="flex-1 p-4 sm:p-6 lg:px-8 lg:py-8">
+                <div class="mx-auto w-full max-w-7xl">
                 @if (session('success'))
                     <div class="mb-6 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900" role="alert">
                         <i data-lucide="check-circle" class="h-5 w-5 shrink-0 text-emerald-600"></i>
@@ -28,6 +30,7 @@
                 @endif
 
                 @yield('content')
+                </div>
             </main>
         </div>
     </div>

@@ -49,7 +49,7 @@
                     @csrf
                     <input type="text" name="website" value="" class="absolute -left-[9999px] h-0 w-0" tabindex="-1" autocomplete="off" aria-hidden="true">
 
-                    @guest
+                    @guest('web')
                         <div>
                             <label class="mb-1 block text-sm font-medium text-gray-700">Ad Soyad</label>
                             <input type="text" name="guest_name" value="{{ old('guest_name') }}" class="w-full rounded-xl border-gray-200 text-sm shadow-sm" required>

@@ -15,9 +15,13 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between gap-3 sm:h-20">
                 <a href="{{ route('shop.home') }}" class="flex shrink-0 cursor-pointer items-center gap-2">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-600 text-lg font-bold text-white shadow-lg shadow-rose-200 sm:h-10 sm:w-10 sm:text-xl">
-                        <i data-lucide="gift" class="h-5 w-5 sm:h-6 sm:w-6"></i>
-                    </div>
+                    @if (file_exists(public_path('images/logo.png')))
+                        <img src="{{ asset('images/logo.png') }}" alt="hediyeme" width="40" height="40" class="h-9 w-9 rounded-xl object-cover shadow-lg shadow-rose-200 sm:h-10 sm:w-10" />
+                    @else
+                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-600 text-lg font-bold text-white shadow-lg shadow-rose-200 sm:h-10 sm:w-10 sm:text-xl">
+                            <i data-lucide="gift" class="h-5 w-5 sm:h-6 sm:w-6"></i>
+                        </div>
+                    @endif
                     <span class="text-lg font-extrabold tracking-tight text-gray-900 sm:text-2xl">
                         hediyeme<span class="text-rose-600">.com</span>
                     </span>
@@ -126,7 +130,7 @@
                     <button type="button" x-on:click="mobileMenu = !mobileMenu" class="rounded-lg p-2 text-gray-600 hover:bg-gray-50 hover:text-rose-600 lg:hidden" aria-label="Menu">
                         <i data-lucide="menu" class="h-6 w-6"></i>
                     </button>
-                    <a href="{{ auth()->check() ? route('dashboard') : route('login') }}" class="hidden flex-col items-center gap-0.5 text-gray-600 hover:text-rose-600 sm:flex">
+                    <a href="{{ auth('web')->check() ? route('dashboard') : route('login') }}" class="hidden flex-col items-center gap-0.5 text-gray-600 hover:text-rose-600 sm:flex">
                         <i data-lucide="user" class="h-[22px] w-[22px]"></i>
                         <span class="hidden text-[10px] font-medium lg:block">Hesabim</span>
                     </a>
@@ -216,7 +220,7 @@
 
         <div x-show="mobileMenu" x-cloak x-transition class="border-t border-gray-100 px-4 py-3 lg:hidden">
             <nav class="flex flex-col gap-2">
-                <a href="{{ auth()->check() ? route('dashboard') : route('login') }}" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Hesabim</a>
+                <a href="{{ auth('web')->check() ? route('dashboard') : route('login') }}" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Hesabim</a>
                 <a href="{{ route('shop.home') }}" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Anasayfa</a>
             </nav>
         </div>

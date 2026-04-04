@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\AdminList;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +14,7 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::query()->updateOrCreate(
+        $user = User::query()->updateOrCreate(
             ['email' => 'admin@hediyeme.com'],
             [
                 'name' => 'Admin',
@@ -21,5 +22,7 @@ class AdminUserSeeder extends Seeder
                 'is_admin' => true,
             ]
         );
+
+        AdminList::query()->firstOrCreate(['user_id' => $user->id]);
     }
 }

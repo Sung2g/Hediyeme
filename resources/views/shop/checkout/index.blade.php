@@ -10,22 +10,23 @@
         <form action="{{ route('shop.checkout.store') }}" method="POST" class="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             @csrf
 
-            @guest
+            @guest('web')
+                @php $pf = $checkoutPrefill ?? []; @endphp
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Ad Soyad</label>
-                    <input type="text" name="name" value="{{ old('name') }}" class="w-full rounded-xl border-gray-200 shadow-sm">
+                    <input type="text" name="name" value="{{ old('name', $pf['name'] ?? '') }}" class="w-full rounded-xl border-gray-200 shadow-sm">
                     @error('name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">E-posta</label>
-                    <input type="email" name="email" value="{{ old('email') }}" class="w-full rounded-xl border-gray-200 shadow-sm">
+                    <input type="email" name="email" value="{{ old('email', $pf['email'] ?? '') }}" class="w-full rounded-xl border-gray-200 shadow-sm">
                     @error('email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
             @endguest
 
             <div>
                 <label class="mb-1 block text-sm font-medium text-gray-700">Telefon</label>
-                <input type="text" name="phone" value="{{ old('phone') }}" class="w-full rounded-xl border-gray-200 shadow-sm" placeholder="+90 ...">
+                <input type="text" name="phone" value="{{ old('phone', ($checkoutPrefill ?? [])['phone'] ?? '') }}" class="w-full rounded-xl border-gray-200 shadow-sm" placeholder="+90 ...">
                 @error('phone')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
 

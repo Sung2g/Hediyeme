@@ -33,17 +33,22 @@ Route::get('/dashboard', function () {
 Route::prefix('acp')->name('acp.')->group(function () {
     Route::redirect('/', '/acp/admin-login');
 
-    Route::middleware('guest')->group(function () {
+    Route::middleware('guest:admin')->group(function () {
         Route::get('/admin-login', [AdminAuthController::class, 'create'])->name('login');
         Route::post('/admin-login', [AdminAuthController::class, 'store'])->name('login.store');
+        Route::get('/admin-register', [AdminAuthController::class, 'registerCreate'])->name('register');
+        Route::post('/admin-register', [AdminAuthController::class, 'registerStore'])->name('register.store');
     });
 
-    Route::middleware('auth')->group(function () {
+    Route::middleware('auth:admin')->group(function () {
         Route::post('/admin-logout', [AdminAuthController::class, 'destroy'])->name('logout');
     });
 });
 
 Route::prefix('sepet')->name('shop.cart.')->group(function () {
+    Route::get('/kapida-onizleme', [CartController::class, 'codPreview'])
+        ->middleware('throttle:120,1')
+        ->name('cod_preview');
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::post('/ekle/{product}', [CartController::class, 'store'])->name('store');
     Route::patch('/guncelle/{product}', [CartController::class, 'update'])->name('update');
@@ -62,12 +67,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth:admin', 'is_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::redirect('/', '/admin/dashboard');
     Route::get('dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::resource('categories', AdminCategoryController::class);
     Route::delete('products/{product}/images/{productImage}', [AdminProductController::class, 'destroyImage'])
         ->name('products.images.destroy');
+    Route::post('products/{product}/images/reorder', [AdminProductController::class, 'reorderImages'])
+        ->name('products.images.reorder');
     Route::resource('products', AdminProductController::class);
     Route::get('yorumlar', [AdminProductReviewController::class, 'index'])->name('reviews.index');
     Route::patch('yorumlar/{review}', [AdminProductReviewController::class, 'update'])->name('reviews.update');

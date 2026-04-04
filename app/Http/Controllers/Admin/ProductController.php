@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -60,20 +62,41 @@ class ProductController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'features' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'type' => ['required', 'in:physical,digital'],
-            'is_active' => ['nullable', 'boolean'],
+            'is_on_sale' => ['nullable', 'boolean'],
+            'compare_at_price' => ['nullable', 'numeric', 'min:0'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'max:2048'],
+            'attr_name' => ['nullable', 'array', 'max:50'],
+            'attr_name.*' => ['nullable', 'string', 'max:255'],
+            'attr_value' => ['nullable', 'array', 'max:50'],
+            'attr_value.*' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $isOnSale = $request->boolean('is_on_sale');
+        $compareAt = $isOnSale && $request->filled('compare_at_price')
+            ? (float) $validated['compare_at_price']
+            : null;
+
+        if ($isOnSale && $compareAt !== null && $compareAt <= (float) $validated['price']) {
+            return back()->withErrors([
+                'compare_at_price' => 'Liste fiyati satis fiyatindan buyuk olmalidir.',
+            ])->withInput();
+        }
 
         $product = Product::query()->create([
-            ...collect($validated)->except(['images', 'is_active'])->all(),
+            ...collect($validated)->except(['images', 'is_on_sale', 'compare_at_price', 'attr_name', 'attr_value'])->all(),
             'slug' => Str::slug($validated['name']).'-'.Str::random(4),
-            'is_active' => (bool) ($validated['is_active'] ?? true),
+            'is_active' => $request->boolean('is_active'),
+            'is_on_sale' => $isOnSale,
+            'compare_at_price' => $compareAt,
+            'cod_enabled' => $request->boolean('cod_enabled'),
         ]);
 
+        $this->syncAttributes($product, $request);
         $this->storeUploadedImages($product, $request);
 
         return redirect()->route('admin.products.index')->with('success', 'Urun olusturuldu.');
@@ -93,7 +116,10 @@ class ProductController extends Controller
     public function edit(Product $product): View
     {
         return view('admin.products.edit', [
-            'product' => $product->load(['images' => fn ($q) => $q->orderBy('sort_order')]),
+            'product' => $product->load([
+                'images' => fn ($q) => $q->orderBy('sort_order'),
+                'specAttributes' => fn ($q) => $q->orderBy('sort_order'),
+            ]),
             'categories' => Category::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
     }
@@ -107,20 +133,41 @@ class ProductController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'features' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'type' => ['required', 'in:physical,digital'],
-            'is_active' => ['nullable', 'boolean'],
+            'is_on_sale' => ['nullable', 'boolean'],
+            'compare_at_price' => ['nullable', 'numeric', 'min:0'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'max:2048'],
+            'attr_name' => ['nullable', 'array', 'max:50'],
+            'attr_name.*' => ['nullable', 'string', 'max:255'],
+            'attr_value' => ['nullable', 'array', 'max:50'],
+            'attr_value.*' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $isOnSale = $request->boolean('is_on_sale');
+        $compareAt = $isOnSale && $request->filled('compare_at_price')
+            ? (float) $validated['compare_at_price']
+            : null;
+
+        if ($isOnSale && $compareAt !== null && $compareAt <= (float) $validated['price']) {
+            return back()->withErrors([
+                'compare_at_price' => 'Liste fiyati satis fiyatindan buyuk olmalidir.',
+            ])->withInput();
+        }
 
         $product->update([
-            ...collect($validated)->except(['images', 'is_active'])->all(),
+            ...collect($validated)->except(['images', 'is_on_sale', 'compare_at_price', 'attr_name', 'attr_value'])->all(),
             'slug' => Str::slug($validated['name']).'-'.Str::random(4),
-            'is_active' => (bool) ($validated['is_active'] ?? false),
+            'is_active' => $request->boolean('is_active'),
+            'is_on_sale' => $isOnSale,
+            'compare_at_price' => $compareAt,
+            'cod_enabled' => $request->boolean('cod_enabled'),
         ]);
 
+        $this->syncAttributes($product, $request);
         $this->storeUploadedImages($product, $request);
 
         return redirect()->route('admin.products.index')->with('success', 'Urun guncellendi.');
@@ -161,6 +208,56 @@ class ProductController extends Controller
         }
 
         return back()->with('success', 'Gorsel silindi.');
+    }
+
+    public function reorderImages(Request $request, Product $product): JsonResponse
+    {
+        $request->validate([
+            'image_ids' => ['required', 'array', 'min:1'],
+            'image_ids.*' => ['integer'],
+        ]);
+
+        $ordered = array_values(array_map('intval', $request->input('image_ids', [])));
+        $canonical = $product->images()->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+        $sortedCopy = $ordered;
+        sort($sortedCopy);
+
+        if (count($ordered) !== count($canonical) || $sortedCopy !== $canonical) {
+            return response()->json(['message' => 'Gorsel listesi gecersiz.'], 422);
+        }
+
+        DB::transaction(function () use ($product, $ordered) {
+            foreach ($ordered as $index => $imageId) {
+                ProductImage::query()
+                    ->where('product_id', $product->id)
+                    ->where('id', $imageId)
+                    ->update(['sort_order' => $index + 1]);
+            }
+        });
+
+        return response()->json(['ok' => true]);
+    }
+
+    private function syncAttributes(Product $product, Request $request): void
+    {
+        $names = $request->input('attr_name', []);
+        $values = $request->input('attr_value', []);
+        $product->specAttributes()->delete();
+
+        $order = 0;
+        $max = max(count($names), count($values));
+        for ($i = 0; $i < $max; $i++) {
+            $name = trim((string) ($names[$i] ?? ''));
+            $value = trim((string) ($values[$i] ?? ''));
+            if ($name === '' && $value === '') {
+                continue;
+            }
+            $product->specAttributes()->create([
+                'name' => $name !== '' ? $name : 'Ozellik',
+                'value' => $value,
+                'sort_order' => $order++,
+            ]);
+        }
     }
 
     private function storeUploadedImages(Product $product, Request $request): void

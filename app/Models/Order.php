@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
@@ -17,11 +17,17 @@ class Order extends Model
         'payment_method',
         'payment_status',
         'subtotal',
+        'shipping_fee',
         'total',
+        'shipping_city',
+        'shipping_district',
+        'shipping_address',
+        'seller_note',
     ];
 
     protected $casts = [
         'subtotal' => 'decimal:2',
+        'shipping_fee' => 'decimal:2',
         'total' => 'decimal:2',
     ];
 

@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\CartService;
+use App\Services\OrderService;
+use App\Services\TurkeyGeoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -110,14 +114,16 @@ class ProductController extends Controller
         $product->load([
             'category',
             'images' => fn ($query) => $query->orderBy('sort_order'),
+            'specAttributes' => fn ($query) => $query->orderBy('sort_order'),
         ]);
 
         $reviews = $product->approvedReviews()->with('user')->get();
         $reviewAverage = $reviews->avg('rating');
         $reviewCount = $reviews->count();
 
-        $userHasReviewed = $request->user()
-            && $product->reviews()->where('user_id', $request->user()->id)->exists();
+        $webUser = $request->user('web');
+        $userHasReviewed = $webUser
+            && $product->reviews()->where('user_id', $webUser->id)->exists();
 
         return view('shop.products.show', [
             'product' => $product,
@@ -128,19 +134,57 @@ class ProductController extends Controller
         ]);
     }
 
-    public function addAndCheckoutCod(Request $request, Product $product, CartService $cart): RedirectResponse
-    {
-        abort_unless($product->is_active, 404);
+    public function addAndCheckoutCod(
+        Request $request,
+        Product $product,
+        CartService $cart,
+        OrderService $orderService,
+        TurkeyGeoService $geo,
+    ): RedirectResponse {
+        abort_unless($product->is_active && $product->cod_enabled, 404);
 
         $validated = $request->validate([
             'quantity' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'first_name' => ['required', 'string', 'max:120'],
+            'last_name' => ['required', 'string', 'max:120'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['required', 'string', 'max:30'],
+            'shipping_city' => ['required', 'string', 'max:120', Rule::in($geo->provinceNames())],
+            'shipping_district' => ['required', 'string', 'max:120'],
+            'shipping_address' => ['required', 'string', 'max:2000'],
+            'seller_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        if (! $geo->isValidDistrictForCity($validated['shipping_city'], $validated['shipping_district'])) {
+            throw ValidationException::withMessages([
+                'shipping_district' => ['Secilen ilce bu ile ait degil.'],
+            ]);
+        }
+
         $cart->add($product, $validated['quantity'] ?? 1);
-        $request->session()->put('checkout_payment_method', 'cash_on_delivery');
+        $shippingFee = (float) config('shop.cod_shipping_fee', 49.9);
+
+        $order = $orderService->createFromCart(
+            $cart->items()->all(),
+            [
+                'name' => trim($validated['first_name'].' '.$validated['last_name']),
+                'email' => $validated['email'] ?? null,
+                'phone' => $validated['phone'],
+                'shipping_fee' => $shippingFee,
+                'shipping_city' => $validated['shipping_city'],
+                'shipping_district' => $validated['shipping_district'],
+                'shipping_address' => $validated['shipping_address'],
+                'seller_note' => $validated['seller_note'] ?? null,
+            ],
+            'cash_on_delivery',
+            $request->user('web')
+        );
+
+        $cart->clear();
+        $request->session()->forget(['checkout_payment_method', 'checkout_guest_prefill']);
 
         return redirect()
-            ->route('shop.checkout.index')
-            ->with('success', 'Urun sepete eklendi. Kapida odeme secili.');
+            ->route('shop.checkout.success', $order)
+            ->with('success', 'Siparisiniz olusturuldu.');
     }
 }

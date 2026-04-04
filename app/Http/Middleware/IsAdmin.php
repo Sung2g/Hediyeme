@@ -15,7 +15,9 @@ class IsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user() || ! $request->user()->is_admin) {
+        $admin = $request->user('admin');
+
+        if (! $admin || ! $admin->isAdminPanelMember()) {
             abort(403);
         }
 

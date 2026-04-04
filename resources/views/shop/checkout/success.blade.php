@@ -39,7 +39,22 @@
                     </li>
                 @endforeach
             </ul>
-            <p class="mt-4 border-t border-gray-100 pt-4 text-right text-lg font-extrabold text-rose-600">{{ number_format($order->total, 2) }} TL</p>
+            <div class="mt-4 space-y-1 border-t border-gray-100 pt-4 text-sm">
+                <div class="flex justify-between text-gray-600">
+                    <span>Ara toplam</span>
+                    <span class="font-medium text-gray-900">{{ number_format($order->subtotal, 2) }} TL</span>
+                </div>
+                @if((float) $order->shipping_fee > 0)
+                    <div class="flex justify-between text-gray-600">
+                        <span>Kargo</span>
+                        <span class="font-medium text-gray-900">{{ number_format($order->shipping_fee, 2) }} TL</span>
+                    </div>
+                @endif
+                <div class="flex justify-between pt-2 text-lg font-extrabold text-rose-600">
+                    <span>Toplam</span>
+                    <span>{{ number_format($order->total, 2) }} TL</span>
+                </div>
+            </div>
         </div>
 
         <div class="flex flex-wrap justify-center gap-3">

@@ -17,8 +17,8 @@
     </div>
 
     <div class="flex items-center gap-2 sm:gap-3">
-        <span class="hidden max-w-[140px] truncate text-xs text-slate-500 sm:block sm:max-w-[200px]" title="{{ auth()->user()->email }}">
-            {{ auth()->user()->email }}
+        <span class="hidden max-w-[140px] truncate text-xs text-slate-500 sm:block sm:max-w-[200px]" title="{{ auth('admin')->user()?->email }}">
+            {{ auth('admin')->user()?->email }}
         </span>
         <form method="POST" action="{{ route('acp.logout') }}">
             @csrf

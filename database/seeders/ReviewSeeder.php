@@ -12,7 +12,7 @@ class ReviewSeeder extends Seeder
     public function run(): void
     {
         $buyers = User::query()
-            ->where('is_admin', false)
+            ->whereDoesntHave('adminList')
             ->orderBy('id')
             ->take(3)
             ->get();

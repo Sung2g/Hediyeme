@@ -3,16 +3,14 @@
 namespace App\Services;
 
 use App\Models\Product;
-use Illuminate\Support\Collection;
 use Illuminate\Session\Store;
+use Illuminate\Support\Collection;
 
 class CartService
 {
     private const CART_KEY = 'cart.items';
 
-    public function __construct(private readonly Store $session)
-    {
-    }
+    public function __construct(private readonly Store $session) {}
 
     public function items(): Collection
     {
@@ -24,6 +22,7 @@ class CartService
         }
 
         $products = Product::query()
+            ->with(['images' => fn ($q) => $q->orderBy('sort_order')])
             ->whereIn('id', $productIds)
             ->where('is_active', true)
             ->get()
@@ -46,6 +45,7 @@ class CartService
                     'price' => (float) $product->price,
                     'quantity' => $qty,
                     'line_total' => $lineTotal,
+                    'thumb_url' => $product->primaryImage()?->url(),
                 ];
             })
             ->filter()
@@ -107,5 +107,34 @@ class CartService
     public function subtotal(): float
     {
         return (float) $this->items()->sum('line_total');
+    }
+
+    /**
+     * Sepet satırları + (isteğe bağlı) kapıda ödeme akışındaki ürünün eklenmiş hâli — oturumu değiştirmez.
+     */
+    public function previewWithPending(?Product $pending, int $pendingQty): Collection
+    {
+        $items = $this->items()->keyBy('product_id');
+
+        if ($pending !== null && $pending->is_active) {
+            $pending->loadMissing(['images' => fn ($q) => $q->orderBy('sort_order')]);
+            $qty = max(1, $pendingQty);
+            if ($items->has($pending->id)) {
+                $row = $items->get($pending->id);
+                $qty = (int) $row['quantity'] + $pendingQty;
+            }
+            $price = (float) $pending->price;
+            $items->put($pending->id, [
+                'product_id' => $pending->id,
+                'name' => $pending->name,
+                'slug' => $pending->slug,
+                'price' => $price,
+                'quantity' => $qty,
+                'line_total' => round($price * $qty, 2),
+                'thumb_url' => $pending->primaryImage()?->url(),
+            ]);
+        }
+
+        return $items->values();
     }
 }

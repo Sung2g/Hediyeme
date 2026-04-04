@@ -4,9 +4,9 @@
 @section('subtitle', 'Vitrine eklenecek urun bilgileri')
 
 @section('content')
-    <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="max-w-3xl space-y-6">
+    <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="mx-auto w-full max-w-5xl space-y-6">
         @csrf
-        <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+        <div class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
             @include('admin.products.partials.form', ['product' => null])
         </div>
         <div class="flex flex-wrap gap-3">

@@ -22,20 +22,22 @@ class ProductReviewController extends Controller
             'body' => ['required', 'string', 'min:10', 'max:2000'],
         ];
 
-        if (! $request->user()) {
+        $webUser = $request->user('web');
+
+        if (! $webUser) {
             $rules['guest_name'] = ['required', 'string', 'max:100'];
             $rules['guest_email'] = ['required', 'email', 'max:255'];
         }
 
         $validated = $request->validate($rules);
 
-        if ($request->user()) {
-            if ($product->reviews()->where('user_id', $request->user()->id)->exists()) {
+        if ($webUser) {
+            if ($product->reviews()->where('user_id', $webUser->id)->exists()) {
                 return back()->with('error', 'Bu urun icin zaten bir degerlendirme yaptiniz.');
             }
 
             $product->reviews()->create([
-                'user_id' => $request->user()->id,
+                'user_id' => $webUser->id,
                 'guest_name' => null,
                 'guest_email' => null,
                 'rating' => $validated['rating'],
